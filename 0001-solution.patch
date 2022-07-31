@@ -1,0 +1,130 @@
+From 391f2ac08411f884460bd94c012c4d02a06c69c9 Mon Sep 17 00:00:00 2001
+From: Shiva <samba20820@gmail.com>
+Date: Tue, 26 Jul 2022 16:47:14 +0000
+Subject: [PATCH] solution
+
+---
+ jpm_module_1/client3.py     | 46 +++++++++++++++++++------------------
+ jpm_module_1/client_test.py | 36 +++++++++++++++++++++++++++++
+ 2 files changed, 60 insertions(+), 22 deletions(-)
+
+diff --git a/jpm_module_1/client3.py b/jpm_module_1/client3.py
+index f1771c3..b9b7509 100644
+--- a/jpm_module_1/client3.py
++++ b/jpm_module_1/client3.py
+@@ -30,30 +30,32 @@ QUERY = "http://localhost:8080/query?id={}"
+ N = 500
+ 
+ def getDataPoint(quote):
+-	""" Produce all of the needed values to generate a datapoint """
+-	""" ------------- Update this function ------------- """
+-	stock = quote['stock']
+-	bid_price = float(quote['top_bid']['price'])
+-	ask_price = float(quote['top_ask']['price'])
+-	price = bid_price
+-	return stock, bid_price, ask_price, price
++  stock = quote['stock']
++  bid_price = float(quote['top_bid']['price'])
++  ask_price = float(quote['top_ask']['price'])
++  sum = bid_price + ask_price
++  avg = sum/2
++  price = avg
++  return stock, bid_price, ask_price, price
+ 
+ def getRatio(price_a, price_b):
+-	""" Get ratio of price_a and price_b """
+-	""" ------------- Update this function ------------- """
+-	""" Also create some unit tests for this function in client_test.py """
+-	return 1
++  # to avoid nonReturnZero
++  if (price_b == 0):
++    return
++  return price_a/price_b
++	
+ 
+ # Main
+ if __name__ == "__main__":
+-
+-	# Query the price once every N seconds.
+-	for _ in iter(range(N)):
+-		quotes = json.loads(urllib.request.urlopen(QUERY.format(random.random())).read())
+-
+-		""" ----------- Update to get the ratio --------------- """
+-		for quote in quotes:
+-			stock, bid_price, ask_price, price = getDataPoint(quote)
+-			print ("Quoted %s at (bid:%s, ask:%s, price:%s)" % (stock, bid_price, ask_price, price))
+-
+-		print ("Ratio %s" % getRatio(price, price))
++  for _ in range(N):
++    quotes = json.loads(urllib.request.urlopen(QUERY.format(random.random())).read())
++    stockPrices = {}
++    for quote in quotes:
++      stock, bid_price, ask_price, price = getDataPoint(quote)
++      stockPrices[stock] = price
++      print ("Quoted %s at (bid:%s, ask:%s, price:%s)" % (stock, bid_price, ask_price, price))
++    price_a = stockPrices['ABC']
++    price_b = stockPrices['DEF']
++    print ("Ratio %s" % getRatio(price_a,price_b))
++
++		
+\ No newline at end of file
+diff --git a/jpm_module_1/client_test.py b/jpm_module_1/client_test.py
+index af2bf26..5d1b2fa 100644
+--- a/jpm_module_1/client_test.py
++++ b/jpm_module_1/client_test.py
+@@ -8,6 +8,12 @@ class ClientTest(unittest.TestCase):
+       {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
+     ]
+     """ ------------ Add the assertion below ------------ """
++    for quote in quotes:
++      stock = quote['stock']
++      bidPrice = quote['top_bid']['price']
++      askPrice = quote['top_ask']['price']
++      avg = (bidPrice + askPrice)/2
++      self.assertEqual(getDataPoint(quote), (stock , bidPrice , askPrice , avg ))
+ 
+   def test_getDataPoint_calculatePriceBidGreaterThanAsk(self):
+     quotes = [
+@@ -15,9 +21,39 @@ class ClientTest(unittest.TestCase):
+       {'top_ask': {'price': 121.68, 'size': 4}, 'timestamp': '2019-02-11 22:06:30.572453', 'top_bid': {'price': 117.87, 'size': 81}, 'id': '0.109974697771', 'stock': 'DEF'}
+     ]
+     """ ------------ Add the assertion below ------------ """
++    for quote in quotes:
++      stock = quote['stock']
++      bidPrice = quote['top_bid']['price']
++      askPrice = quote['top_ask']['price']
++      avg = (bidPrice + askPrice)/2
++      self.assertEqual(getDataPoint(quote), (stock , bidPrice , askPrice , avg ))
+ 
+ 
+   """ ------------ Add more unit tests ------------ """
++  def test_getRatio_priceBZero(self):
++    price_a = 119.2
++    price_b = 0
++    self.assertIsNone(getRatio(price_a, price_b))
++
++  def test_getRatio_priceAZero(self):
++    price_a = 0
++    price_b = 121.68
++    self.assertEqual(getRatio(price_a, price_b), 0)
++
++  def test_getRatio_greaterThan1(self):
++    price_a = 346.48
++    price_b = 166.39
++    self.assertGreater(getRatio(price_a, price_b), 1)
++
++  def test_getRatio_LessThan1(self):
++    price_a = 166.39
++    price_b = 356.48
++    self.assertLess(getRatio(price_a, price_b), 1)
++
++  def test_getRatio_exactlyOne(self):
++    price_a = 356.48
++    price_b = 356.48
++    self.assertEqual(getRatio(price_a, price_b), 1)
+ 
+ 
+ 
+-- 
+2.17.1
+
